@@ -1,0 +1,184 @@
+<Module>
+<ModulePrefs title="Slope Game"/>
+<Content type="html">
+<![CDATA[
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #000;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      padding: 0;
+      margin: 0;
+    }
+
+    #gameContainer {
+      background: transparent !important;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    #gameContainer canvas {
+      position: absolute;
+    }
+
+    #gameContainer canvas[data-pixel-art="true"] {
+      position: absolute;
+      image-rendering: optimizeSpeed;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -o-crisp-edges;
+      image-rendering: crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: optimize-contrast;
+      image-rendering: pixelated;
+      -ms-interpolation-mode: nearest-neighbor;
+    }
+
+    /* Loading bar */
+    #unity-loading-bar {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: block;
+      z-index: 1000;
+    }
+
+    #unity-logo {
+      width: 154px;
+      height: 130px;
+      background: url('https://cdn.jsdelivr.net/gh/classrom-gg/h5-slope@master/TemplateData/unity-logo-dark.png') no-repeat center;
+    }
+
+    #unity-progress-bar-empty {
+      width: 141px;
+      height: 18px;
+      margin-top: 10px;
+      background: url('https://cdn.jsdelivr.net/gh/classrom-gg/h5-slope@master/TemplateData/progress-bar-empty-dark.png') no-repeat center;
+    }
+
+    #unity-progress-bar-full {
+      width: 0%;
+      height: 18px;
+      margin-top: 10px;
+      background: url('https://cdn.jsdelivr.net/gh/classrom-gg/h5-slope@master/TemplateData/progress-bar-full-dark.png') no-repeat center;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="unity-canvas" data-pixel-art=""></canvas>
+    <div id="unity-loading-bar">
+      <div id="unity-logo"></div>
+      <div id="unity-progress-bar-empty">
+        <div id="unity-progress-bar-full"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/gh/classrom-gg/h5-slope@master/Build/output_2022_version.loader.js"></script>
+  <script>
+    var loadingBar = document.querySelector("#unity-loading-bar");
+    var progressBarFull = document.querySelector("#unity-progress-bar-full");
+    var canvas = document.querySelector("#unity-canvas");
+    var logo = document.querySelector("#unity-logo");
+
+    var config = {
+      dataUrl: "https://cdn.jsdelivr.net/gh/classrom-gg/h5-slope@master/Build/output_2022_version.data.gz",
+      frameworkUrl: "https://cdn.jsdelivr.net/gh/classrom-gg/h5-slope@master/Build/output_2022_version.framework.js.gz",
+      codeUrl: "https://cdn.jsdelivr.net/gh/classrom-gg/h5-slope@master/Build/output_2022_version.wasm.gz",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "Y8",
+      productName: "Slope",
+      productVersion: "1.3",
+    };
+
+    var scaleToFit;
+    try {
+      scaleToFit = !!JSON.parse("");
+    } catch (e) {
+      scaleToFit = true;
+    }
+
+    function progressHandler(progress) {
+      var percent = progress * 100 + '%';
+      progressBarFull.style.width = percent;
+    }
+
+    function onResize() {
+      var container = canvas.parentElement;
+      var w;
+      var h;
+
+      if (scaleToFit) {
+        w = window.innerWidth;
+        h = window.innerHeight;
+
+        var isMobileOrTablet = /Mobi|Android|iPhone|iPad|iPod|Tablet|Silk/i.test(navigator.userAgent);
+        var r = isMobileOrTablet ? window.innerHeight / window.innerWidth : 600 / 960;
+
+        if (w * r > window.innerHeight) {
+          w = Math.min(w, Math.ceil(h / r));
+        }
+        h = Math.floor(w * r);
+      } else {
+        w = 960;
+        h = 600;
+      }
+
+      container.style.width = canvas.style.width = w + "px";
+      container.style.height = canvas.style.height = h + "px";
+      container.style.top = Math.floor((window.innerHeight - h) / 2) + "px";
+      container.style.left = Math.floor((window.innerWidth - w) / 2) + "px";
+      logo.style.left = Math.floor((w - 154) / 2) + "px";
+      logo.style.top = Math.floor((h - 130) / 3) + "px";
+    }
+
+    var myGameInstance = null;
+    createUnityInstance(canvas, config, progressHandler).then(function (instance) {
+      loadingBar.style.display = 'none';
+      myGameInstance = instance;
+      canvas = instance.Module.canvas;
+      onResize();
+    }).catch(function(err) {
+      console.error('Unity load error:', err);
+      alert('Failed to load game. Please refresh the page.');
+    });
+
+    window.addEventListener('resize', onResize);
+    onResize();
+
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      const meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+      document.getElementsByTagName('head')[0].appendChild(meta);
+    }
+
+    // Prevent arrow keys scrolling
+    document.addEventListener('keydown', function(e) {
+      if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+        e.preventDefault();
+      }
+    }, false);
+
+    // Prevent right-click
+    document.addEventListener('contextmenu', e => e.preventDefault());
+  </script>
+
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/classrom-gg/h5-slope@master/TemplateData/gameBreakBeta.js"></script>
+</body>
+</html>
+]]>
+</Content>
+</Module>
